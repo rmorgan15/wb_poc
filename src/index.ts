@@ -13,6 +13,18 @@ const server = Fastify({
 });
 
 const start = async () => {
+  // Add graceful shutdown
+  const signals = ['SIGINT', 'SIGTERM'];
+  
+  signals.forEach(signal => {
+    process.on(signal, async () => {
+      server.log.info('Shutting down gracefully...');
+      await server.close();
+      await prisma.$disconnect();
+      process.exit(0);
+    });
+  });
+
   // Register Swagger
   await server.register(swagger, {
     swagger: {

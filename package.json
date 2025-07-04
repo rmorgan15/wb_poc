@@ -1,7 +1,7 @@
 {
-  "name": "containerized-web-server",
+  "name": "project_wb",
   "version": "1.0.0",
-  "description": "A containerized web server with Node.js, Fastify, Prisma, and TypeScript.",
+  "description": "Service Server",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -9,8 +9,14 @@
     "dev": "nodemon src/index.ts",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
+    "prisma:studio": "prisma studio",
+    "prisma:reset": "prisma migrate reset",
     "prisma:generate": "prisma generate",
-    "prisma:migrate:dev": "prisma migrate dev"
+    "prisma:migrate:dev": "prisma migrate dev",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker build -t project_wb .",
+    "test": "echo  \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "docker",
@@ -23,6 +29,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fastify/cors": "^11.0.1",
+    "@fastify/helmet": "^13.0.1",
     "@fastify/swagger": "^8.14.0",
     "@fastify/swagger-ui": "^3.0.0",
     "@prisma/client": "^5.14.0",
