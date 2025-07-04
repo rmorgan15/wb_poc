@@ -5,9 +5,9 @@
 node_modules/
 # Ignore build output directory
 dist/
+# Ignore Prisma client output
+node_modules/.prisma/
 # Ignore log files
 *.log
-# Ignore environment variable files
-.env
 
 *.DS_Store
