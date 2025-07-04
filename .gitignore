@@ -1,0 +1,13 @@
+
+.dockerignore
+.env
+# Ignore node_modules directory
+node_modules/
+# Ignore build output directory
+dist/
+# Ignore log files
+*.log
+# Ignore environment variable files
+.env
+
+*.DS_Store
