@@ -1,5 +1,4 @@
 # Gemini Project Helper
-
 This file helps Gemini understand how to work with this project.
 
 ## Common Commands
