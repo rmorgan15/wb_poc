@@ -13,3 +13,5 @@ node_modules/.prisma/
 .dockerignore
 .env*
 .vscode
+
+docs\private
