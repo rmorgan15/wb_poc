@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant User
+    participant RequestBuilder as React RequestBuilder
+    participant FastifyProxy as Fastify Proxy Endpoint
+    participant ThirdPartyAPI as Third-Party API
+
+    User->>+RequestBuilder: Fills out form and clicks "Test"
+    RequestBuilder->>+FastifyProxy: POST /api/proxy/test with {url, method, payload}
+    Note over FastifyProxy: Validates and sanitizes input
+    FastifyProxy->>+ThirdPartyAPI: Makes the proxied HTTP request
+    ThirdPartyAPI-->>-FastifyProxy: Returns response (e.g., 200 OK, 404, etc.)
+    FastifyProxy-->>-RequestBuilder: Forwards the response
+    RequestBuilder->>User: Renders status, headers, and body in Response Panel

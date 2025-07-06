@@ -1,0 +1,18 @@
+graph TD
+    subgraph User's Browser
+        A[User] --> B[React SPA];
+    end
+
+    subgraph "Your Infrastructure (Server)"
+        D[Fastify Backend API] --> E[PostgreSQL Database];
+        C[Vite Dev Server/Static Files] --> B;
+    end
+
+    B -- "API Calls for App Data (CRUD) \n (e.g., /api/projects)" --> D;
+    B -- "API Test Call \n (e.g., /api/proxy/test)" --> D;
+    D -- "via Prisma ORM" --> E;
+    D -- "Proxied Request" --> F[Third-Party APIs];
+
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#9cf,stroke:#333,stroke-width:2px
+    style D fill:#9f9,stroke:#333,stroke-width:2px

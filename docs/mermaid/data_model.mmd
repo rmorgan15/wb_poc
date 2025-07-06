@@ -1,0 +1,35 @@
+erDiagram
+    User ||--|{ Profile : "has"
+    Profile ||--|{ Project : "has"
+    Project ||--|{ ApiEndpoint : "contains"
+    ApiEndpoint ||--|{ SavedApiCall : "has"
+
+    User {
+        int id PK
+        string email UK
+        string name
+    }
+    Profile {
+        int id PK
+        string name
+        int userId FK
+    }
+    Project {
+        int id PK
+        string name
+        int profileId FK
+    }
+    ApiEndpoint {
+        int id PK
+        string name
+        string url
+        string httpMethod
+        int projectId FK
+    }
+    SavedApiCall {
+        int id PK
+        string name
+        json payload
+        json headers
+        int apiEndpointId FK
+    }

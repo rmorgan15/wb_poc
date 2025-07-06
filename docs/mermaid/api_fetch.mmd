@@ -1,0 +1,18 @@
+sequenceDiagram
+    participant User
+    participant ReactComponent as React Component
+    participant TanStackQuery as TanStack Query
+    participant FastifyAPI as Fastify API
+    participant Prisma
+    participant Database
+
+    User->>+ReactComponent: Interacts with UI
+    ReactComponent->>+TanStackQuery: Calls useQuery('projects')
+    TanStackQuery->>+FastifyAPI: GET /api/projects
+    FastifyAPI->>+Prisma: prisma.project.findMany()
+    Prisma->>+Database: SELECT * FROM "Project";
+    Database-->>-Prisma: Returns project records
+    Prisma-->>-FastifyAPI: Returns JSON data
+    FastifyAPI-->>-TanStackQuery: Returns 200 OK with JSON
+    TanStackQuery-->>-ReactComponent: Provides data, caches response
+    ReactComponent-->>-User: Renders project list

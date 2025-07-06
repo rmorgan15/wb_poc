@@ -1,0 +1,23 @@
+graph TD
+    subgraph "React Application"
+        App -- "Manages Layout" --> ProjectPanel;
+        App --> RequestBuilder;
+        App --> ResponsePanel;
+
+        subgraph "State & Data"
+            StateManagement["React Context / Zustand \n (e.g., selectedProjectId)"];
+            DataFetching["TanStack Query \n (Handles Caching, Loading, Errors)"];
+        end
+    end
+
+    ProjectPanel -- "Uses" --> DataFetching;
+    RequestBuilder -- "Uses" --> StateManagement;
+    ResponsePanel -- "Receives props from" --> RequestBuilder;
+
+    DataFetching -- "Fetches from" --> FastifyAPI["Fastify Backend API"];
+    RequestBuilder -- "Sends test call to" --> FastifyAPI;
+
+
+    style App fill:#9cf,stroke:#333,stroke-width:2px
+    style StateManagement fill:#f96,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
+    style DataFetching fill:#f96,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
