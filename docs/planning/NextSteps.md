@@ -1,121 +1,63 @@
-1. Core Concepts & Architecture
-The application is designed as a multi-tenant API management workspace. Its primary purpose is to allow a user to interact with different deployments (tenants) of a single customer's API, facilitate data comparison between these tenants, and ensure safe data handling practices, especially concerning Personal Data.
 
-The architecture remains a decoupled system, with a React Single Page Application (SPA) for the frontend and a Fastify server for the backend API and proxy.
+### Update Database Schema
 
-Profile: This is now a user-centric space for managing application-wide preferences, such as theme settings (e.g., Light vs. Dark Mode).
+CustomerProject: This is the central model the User will interact with. It contains the project's name and links to the project tenants.
 
-Workspace: This is the user's primary container for organizing their work. A workspace holds multiple Customer Projects.
+We should decouple the piiFields array on the Project.
+We will want a more flexible method for configuration.   
+There will be multiple aspects of a project that a User may want to configure.  
+Some configurations may be common across projects. 
+Some configurations may NOT be common even within a single customer's Tenants.
+A configuration can be saved at multiple levels, user profile, customer project, tenant endpoint.
+For a given configuration category, configuration values will be checked first at a tenant enpooint level, then the customer project level, then the User's Profile.
 
-Customer Project: Represents a single customer's API ecosystem. A project contains a shared API schema and a set of tenant configurations.
-
-Tenant Endpoint: Represents a specific deployment of the customer's API (e.g., Development, Testing, Staging, Production). Each tenant has a unique host but shares the same fundamental API structure defined in the project.
-
-2. Updated Database Schema
-To support the new requirements, the database schema must be restructured to model the relationships between projects, tenants, and schemas accurately.
-
-Code snippet
-
-erDiagram
-    User ||--|{ Profile : "has"
-    User ||--|{ CustomerProject : "manages"
-    CustomerProject ||--|{ TenantEndpoint : "has"
-
-    User {
-        int id PK
-        string email UK
-        string name
-    }
-    Profile {
-        int id PK
-        string theme "e.g., 'light' or 'dark'"
-        int userId FK
-    }
-    CustomerProject {
-        int id PK
-        string name
-        json piiFields "['user.email', 'user.address']"
-        int userId FK
-    }
-    TenantEndpoint {
-        int id PK
-        string name "e.g., 'Development', 'Production'"
-        string host "https://api.customer-dev.com"
-        string type "DEV, TEST, PROD"
-        int customerProjectId FK
-    }
-Key Schema Changes & Justification:
-
-CustomerProject: This is the central model. It contains the project's name and, critically, a piiFields JSON field.
-
-Why piiFields?: Storing this configuration at the project level allows a user to define which data fields are sensitive across all tenants of that API. This is the most logical place to manage this rule, as the data structure is consistent across tenants. It will store an array of dot-notation strings (e.g., ['user.email', 'address.street']) for easy parsing.
-
-TenantEndpoint: This model replaces the generic ApiEndpoint. It explicitly stores the name (e.g., "Production"), the host (the base URL), and a type enum (DEV, TEST, PROD).
-
-Why?: This structure directly models the one-to-many relationship where one project has multiple deployment tenants. The type field is crucial for the backend to apply different rules (e.g., disallowing POST in PROD).
-
-3. Backend API Enhancements
-The Fastify backend's responsibilities will expand significantly, particularly in the proxy logic.
-
-CRUD Endpoints: Standard CRUD routes for CustomerProject and TenantEndpoint are required.
-
-Intelligent Proxy Endpoint (POST /api/proxy/execute): This endpoint becomes the core of the application's logic. When it receives a request from the frontend, it must perform the following steps:
-
-Identify Tenant Type: Using the tenantId from the request, look up the TenantEndpoint in the database to determine its type (e.g., PROD).
-
-Enforce Permissions:
-
-If the tenant type is PROD or STAGING and the HTTP method is POST, PUT, or DELETE, the API should reject the request with an error by default. This is a critical safety feature.
-
-These permissions should be configurable in the future but will start with safe defaults.
-
-Apply PII Filtering:
-
-If the tenant type is PROD, before sending the request, the backend will consult the piiFields configuration for the project.
-
-This feature will initially be focused on response filtering. After receiving data from the production API, the proxy will parse the response and remove or mask the fields defined in piiFields before sending the data back to the frontend.
-
-Data Comparison Endpoint (POST /api/proxy/diff): This new endpoint is required for the data comparison use case.
-
-It will accept two tenantIds (e.g., tenantAId and tenantBId) and the request details (path, payload).
-
-The backend will make two parallel calls to the respective tenant hosts.
-
-It will then perform a deep comparison of the two JSON responses and return a structured "diff" object to the frontend, highlighting additions, deletions, and modifications.
-
-Mock Data Generation Endpoint (POST /api/proxy/mock):
-
-This endpoint will accept a tenantId and a request payload.
-
-It will identify any fields in the payload that are marked as PII.
-
-Using an integrated library (like faker.js), it will replace the PII values with realistic but fake data before forwarding the request to the TEST tenant. This ensures that real personal data is not accidentally used in testing environments.
-
-4. Frontend UI/UX Evolution (React)
+### Frontend UI/UX Evolution (React)
 The React SPA will need a more sophisticated layout and component set to handle the new features.
 
-Navigation: A top-level navigation bar is needed to switch between the main Workspace view and the user's Profile page.
+The primary Appolicaiton Window should have a Left-hand sidebar, a central panel and a tool bar across the top of the screen, by default. 
+the left hand side bar should be a tree-structre, like a file directory browser such as the Mac Finder or Windows Explorer.
+This side bar will have node - locked to the top of the tree - labeled 'Profiles' nested under that node will be the User's profiles.  
+The toolbar will have icon buttons for functionality or choosing workspace modes.  this toolbar will be collapsable.
+User should always have at least one Profile, And User will be created with a default profile.   
+At same root level as Profiles, there should be Customer Projects, with Tenant Enpoints nested within them.
+The applicaiton wil also support collapsable or 'hideable' tool bars for the right hand side, or bottom of screen.
+There should be icons to expand all nodes, and collapse all nodes.
+The overall UI aesthetic should be similar to those of popular IDEs like IntelliJ or Visual Studio Code 
+The side bar and panels should be allowed to be resized by the user by click-dragging the navbar border (e.g. make side bar wider or narrower)
+We will want the nodes in our left side-bar tree structure to support right-click context menu.
 
 Workspace View:
+When a user selects a node from the left-hand sidebar, then in the central workspace panel the page to interact with the node in the default manner will be loaded. This panel is tabbed, and can support pages for multiple nodes or different modes or views for the same node.  
+Tabs of a workspace page have the Name of the Node, then, A clear, color-coded badge (e.g., 🔴 PROD, 🟡 STAGING, 🟢 DEV) correlating to the tenant of the record shown in the central panel.
 
-The project/tenant list on the left remains, but it will now display CustomerProjects and their nested TenantEndpoints.
+This Central View will support muliple types of pages depending on the mode of operation.
+Some examples follow
 
-When a user selects an endpoint, it loads in the central Request Builder panel. A clear, color-coded badge (e.g., 🔴 PROD, 🟡 STAGING, 🟢 DEV) must be prominently displayed to constantly remind the user which environment they are targeting.
+API Workbench UI:  User to directly interact with Single Tenant Endpoint.
+User will construct API Calls, execute the calls agains the endpoint and be Review and Act upon the results of the call.  
+User will need a text input area to construct API calls either by typing or pasting directly into area.
+User will want to save API Calls - storing the full message, as well as a name field and a description field.
+  Saved API Calls are stored at the Tenant Endpoint level and can be copied to other Tenant Endpoints.
+User will want a text area to review API Call results.  The text area should allow for copying.
+Persisting Results will also be supported under multiple methods.
+Workbench Save - Create a 'SavedAPIResult' record in db and a node associated with the tenant endpoint.
+FileSystem Save - save the response as a text file to the servers local file system (provide file name and perhaps directory)
+Mock Database Save - transform the api response and save to a tenant specific mock database.  Example Use case - User calls tentant endpoint querying for all Widgets.  In our applications database we store the records in a 'Widgets' table.
+
+-- For Discussion - how to architect this mock database.  differently labled tables in main applicaiton DB, or sepeate DB for all of a customers mock objects.
+
+Record Mode UI: This page is List of the database fields, data type and current values for the selected node.
 
 Comparison Mode UI:
-
 The UI needs a mechanism, perhaps a "Compare" button, to enter a comparison mode.
 
-In this mode, the user can select a second tenant. The ResponsePanel will then split into a two-panel "diff" view.
+In this mode, the user can select a two nodes of the same type to compare.  Examples could be, SavedAPIResults from multiple tenants.   Mock Database records across multiple tenants.
+The Workspace page will then split into a two-panel "diff" view.
+This view will display the mode-specific contents of the two nodes side-by-side, with clear visual highlighting (e.g., red for deletions, green for additions) for any differences found in the data, powered by the response from the /api/proxy/diff endpoint.
 
-This view will display the two responses side-by-side, with clear visual highlighting (e.g., red for deletions, green for additions) for any differences found in the data, powered by the response from the /api/proxy/diff endpoint.
+Project Configuration UI:
 
-Project Settings UI:
+Within each project, there will be a muliple types of configurations that will be needed. 
+Selecting this node shows a list of the saved configurations in the project.
+The workspace will allow selecting an existing setting and editing and saving, or deleting.  Or adding a new setting.
 
-Within each project, there must be a "Settings" tab or modal.
-
-This interface will allow the user to view and edit the piiFields list, providing a simple text area or a tag-based input for managing the list of sensitive fields.
-
-Write-Action Confirmation:
-
-When a user attempts to use POST or PUT on a DEV or TEST tenant, the UI should present a confirmation modal (e.g., "You are about to modify data in the DEV environment. Are you sure?") as a final safety check.

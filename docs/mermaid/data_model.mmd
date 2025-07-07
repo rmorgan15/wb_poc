@@ -1,8 +1,7 @@
 erDiagram
     User ||--|{ Profile : "has"
-    Profile ||--|{ Project : "has"
-    Project ||--|{ ApiEndpoint : "contains"
-    ApiEndpoint ||--|{ SavedApiCall : "has"
+    User ||--|{ CustomerProject : "manages"
+    CustomerProject ||--|{ TenantEndpoint : "has"
 
     User {
         int id PK
@@ -11,25 +10,28 @@ erDiagram
     }
     Profile {
         int id PK
-        string name
+        string theme "e.g., 'light' or 'dark'"
         int userId FK
     }
-    Project {
+    CustomerProject {
         int id PK
         string name
-        int profileId FK
+        json piiFields "['user.email', 'user.address']"
+        int userId FK
     }
-    ApiEndpoint {
+    TenantEndpoint {
         int id PK
-        string name
-        string url
-        string httpMethod
-        int projectId FK
-    }
+        string name "e.g., 'Development', 'Production'"
+        string host "https://api.customer-dev.com"
+        string type "DEV, TEST, PROD"
+        int customerProjectId FK
+    }    
     SavedApiCall {
         int id PK
         string name
+        string description
         json payload
         json headers
-        int apiEndpointId FK
+        int tenantEndpointId FK
     }
+
